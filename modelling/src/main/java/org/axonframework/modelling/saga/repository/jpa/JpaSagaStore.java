@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -108,7 +109,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     protected JpaSagaStore(Builder builder) {
         builder.validate();
         this.entityManagerProvider = builder.entityManagerProvider;
-        this.serializer = builder.serializer;
+        this.serializer = builder.serializer.get();
         addNamedQueriesTo(this.entityManagerProvider.getEntityManager());
     }
 
@@ -357,7 +358,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     public static class Builder {
 
         private EntityManagerProvider entityManagerProvider;
-        private Serializer serializer = XStreamSerializer.builder().build();
+        private Supplier<Serializer> serializer = () -> XStreamSerializer.builder().build();
 
         /**
          * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the
@@ -381,7 +382,7 @@ public class JpaSagaStore implements SagaStore<Object> {
          */
         public Builder serializer(Serializer serializer) {
             assertNonNull(serializer, "Serializer may not be null");
-            this.serializer = serializer;
+            this.serializer = () -> serializer;
             return this;
         }
 

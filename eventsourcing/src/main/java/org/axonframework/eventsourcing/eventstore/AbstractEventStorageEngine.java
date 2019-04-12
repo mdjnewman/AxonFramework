@@ -33,6 +33,7 @@ import org.axonframework.serialization.xml.XStreamSerializer;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -61,10 +62,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      */
     protected AbstractEventStorageEngine(Builder builder) {
         builder.validate();
-        this.snapshotSerializer = builder.snapshotSerializer;
+        this.snapshotSerializer = builder.snapshotSerializer.get();
         this.upcasterChain = builder.upcasterChain;
         this.persistenceExceptionResolver = builder.persistenceExceptionResolver;
-        this.eventSerializer = builder.eventSerializer;
+        this.eventSerializer = builder.eventSerializer.get();
         this.snapshotFilter = builder.snapshotFilter;
     }
 
@@ -212,10 +213,10 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      */
     public abstract static class Builder {
 
-        private Serializer snapshotSerializer = XStreamSerializer.builder().build();
+        private Supplier<Serializer> snapshotSerializer = () -> XStreamSerializer.builder().build();
         protected EventUpcaster upcasterChain = NoOpEventUpcaster.INSTANCE;
         private PersistenceExceptionResolver persistenceExceptionResolver;
-        private Serializer eventSerializer = XStreamSerializer.builder().build();
+        private Supplier<Serializer> eventSerializer = () -> XStreamSerializer.builder().build();
         private Predicate<? super DomainEventData<?>> snapshotFilter = i -> true;
 
         /**
@@ -227,7 +228,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          */
         public Builder snapshotSerializer(Serializer snapshotSerializer) {
             assertNonNull(snapshotSerializer, "The Snapshot Serializer may not be null");
-            this.snapshotSerializer = snapshotSerializer;
+            this.snapshotSerializer = () -> snapshotSerializer;
             return this;
         }
 
@@ -267,7 +268,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
          */
         public Builder eventSerializer(Serializer eventSerializer) {
             assertNonNull(eventSerializer, "The Event Serializer may not be null");
-            this.eventSerializer = eventSerializer;
+            this.eventSerializer = () -> eventSerializer;
             return this;
         }
 
